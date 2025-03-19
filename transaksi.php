@@ -1,142 +1,184 @@
 <?php
-
-$datapaket=array(
-  array("VIP",3000000,"vip.jpg"),
-  array("Ballroom",2500000,"ballroom.jpg"),
-  array("Outdoor",4500000,"kasur.jpg")
-);
-
- // Inisialisasi variabel default
- $pilih_gedung = $datapaket[0][0];
- $pilih_harga = $datapaket[0][1];
- $catering = false;
- $durasi = '';
- $total_bayar = 0;
- $errors = [];
-
- // Mengecek apakah form telah dikirim (dengan metode POST)
- if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-     // Validasi input
-     $pilih_gedung = $_POST['gedung'] ?? $datapaket[0][0];
-     $pilih_harga = array_column($datapaket, 1, 0)[$pilih_gedung];
-     $catering = isset($_POST['catering']);
-     $durasi = $_POST['durasi'] ?? '';
-     $identitas = $_POST['identitas'] ?? '';
+require('dummy.php');
 
 
-     if (!is_numeric($durasi)) {
-         $errors[] = "Durasi harus berupa angka lebih dari 0";
-     }
-     if (!is_numeric($_POST['identitas'])) {
-         $errors[] = "Identitas harus berupa angka";
-     }
-     
-     // Validasi: Nomor identitas harus 16 digit angka
-     // strlen untuk menghitung jumlah karakter yang diinputkan pada input dengan name identitas
-     if (strlen($_POST['identitas']) !== 16) {
-         $errors[] = "Nomor Identitas harus 16 digit angka.";
-     }
+// inisilasi
+$id= $_GET["id"];
+//mengambil nilai dari home.php
+ $no_transaksi="";
+ $nama_customer="";
+ $tanggal="";
+ $harga="0";
+ $tambahan="0";
+ $total_harga="0";
+ $pembayaran="0";
+ $kembalian="0";
+ $jumlah_produk="0";
 
-     // Jika tidak ada error validasi, hitung total pembayaran
-     if (empty($errors)) {
-         // Menghitung biaya sewa mobil total berdasarkan durasi
-         $total_harga_gedung = $pilih_harga * $durasi;
+  //memeriksa apakah form dikirim menggunakan method post
+ if($_SERVER['REQUEST_METHOD'] == 'POST'){
+    $harga = $_POST['harga'];
+    $no_transaksi =$_POST['no_transaksi'];
+    $nama_customer =$_POST['nama_customer'];
+    $tanggal =$_POST['tanggal'];
+    $total_harga = $_POST['total_harga'];
+    $pembayaran = $_POST['pembayaran'];
+    $kembalian = $_POST['kembalian'];
+    $jumlah_produk = $_POST['jumlah_produk'];
 
-         // Memberikan diskon 10% jika durasi sewa 3 hari atau lebih
-         $diskon = ($durasi >= 3) ? 0.1 * $total_harga_gedung : 0;
-
-         // Menghitung biaya tambahan untuk catering jika dipilih (Rp 1,200,000 per hari)
-         $biaya_catering = $catering ? 1200000 * $durasi : 0;
-
-         // Menghitung total pembayaran setelah dikurangi diskon dan ditambah biaya catering
-         $total_bayar = $total_harga_gedung - $diskon + $biaya_catering;
-     }
-
-     if (isset($_POST['simpan'])) {
-         $diskon = ($durasi >= 3) ? 0.1 * $total_harga_gedung : 0;
-         $check = $catering == "checked" ? 'Ya' : 'Tidak';
-         $nama = $_POST['nama'];
-         $identitas = $_POST['identitas'];
-         $gender = $_POST['gender'];
-         $gedung = $_POST['gedung'] ;
-         $detail_pesanan = "Pesanan Berhasil!\n\n"
-             . "Nama: $nama\n"
-             . "Nomor Identitas: $identitas\n"
-             . "Jenis Kelamin: $gender\n"
-             . "Jenis Mobil: $pilih_gedung \n"
-             . "Catering: $check\n" 
-             . "Durasi:$durasi hari \n"
-             . "Diskon: <?= ($diskon > 0) ? '10%' : '0%' ?>  \n"
-             . "Total Bayar: Rp " . number_format($total_bayar, 0, ',', '.');
- 
-         echo "<script>
-             alert(`$detail_pesanan`);
-             window.location.href = 'index.php';
-         </script>";
-         exit();
-     }
+    // ketika tombol hitung ditekan maka $harga akan di kali dengan $jumlah_produk dan di simpan ke dalam $total_harga
+    if(isset($_POST['hitung'])){
+        $total_harga = $harga * $jumlah_produk;
+    }
+    // ketika tombol hitung kembalian maka $pembayaran akan di kurangi dengan $total_harga dan di simpan ke dalam $kembalian
+    if(isset($_POST['hitung_kembalian'])){
+        $kembalian = $pembayaran - $total_harga;
+    }
+    // ketika tombol simpan ditekan maka akan muncul po up Transaksi Berhasil di Simpan
+    if(isset($_POST['simpan'])){
+        echo"<script>
+        alert('Transaksi Berhasil di Simpan');
+        window.location.href = 'home.php';
+        </script>";
+    }
  }
 ?>
-<!DOCTYPE html>
-<html lang="id">
-<head>
- <meta charset="UTF-8">
- <meta name="viewport" content="width=device-width, initial-scale=1">
- <title>Form Pemesanan</title>
- <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-</head>
-<body>
- <div class="container mt-5">
-     <div class="card">
-         <div class="card-header bg-primary text-white text-center">
-             <h5>Form Pemesanan</h5>
-         </div>
-         <div class="card-body">
-             <?php if ($errors) { ?>
-                 <div class="alert alert-danger">
-                     <ul>
-                         <?php foreach ($errors as $error) { echo "<li>$error</li>"; } ?>
-                     </ul>
-                 </div>
-             <?php } ?>
 
-             <form method="POST">
-                 <input type="text" class="form-control mb-3" name="nama" placeholder="Nama Pemesan" value="<?= $_POST['nama'] ?? '' ?>" required>
-                 
-                 <div class="mb-3">
-                     <label class="form-label">Jenis Kelamin</label><br>
-                     <input class="form-check-input" type="radio" name="gender" value="Laki-laki" <?= ($_POST['gender'] ?? '') === 'Laki-laki' ? 'checked' : '' ?>> Laki-laki
-                     <input class="form-check-input ms-3" type="radio" name="gender" value="Perempuan" <?= ($_POST['gender'] ?? '') === 'Perempuan' ? 'checked' : '' ?>> Perempuan
-                 </div>
-                 
-                 <input type="text" class="form-control mb-3" name="identitas" placeholder="Nomor Identitas (16 digit)" value="<?= $_POST['identitas'] ?? '' ?>" required>
-                 
-                 <select class="form-select mb-3" name="gedung" onchange="this.form.submit()">
-                     <?php foreach  ($datapaket as $paket) { ?>
-                         <option value="<?= $paket[0] ?>" <?= ($paket[0] === $pilih_gedung) ? 'selected' : '' ?>>
-                             <?= $paket[0] ?>
-                         </option>
-                     <?php }?>
-                 </select>
-                
-                 <input type="text" class="form-control mb-3" name="harga" value="<?= number_format($pilih_harga, 0, ',', '.') ?>" readonly>
-                 
-                 <input type="date" class="form-control mb-3" name="tanggal" value="<?= $_POST['tanggal'] ?? '' ?>" required>
-                 
-                 <input type="number" class="form-control mb-3" name="durasi" placeholder="Durasi Sewa (hari)" value="<?= $durasi ?>" required>
-                 
-                 <div class="mb-3">
-                     <input class="form-check-input" type="checkbox" name="catering" <?= $catering ? 'checked' : '' ?>> Termasuk Catering (Rp 1,200,000/hari)
-                 </div>
-
-                 <input type="text" class="form-control mb-3" value="<?= $total_bayar ? number_format($total_bayar, 0, ',', '.') : '' ?>" placeholder="Total Bayar" readonly>
-                 
-                 <button type="submit" class="btn btn-primary">Hitung Total</button>
-                 <button type="submit" name="simpan" class="btn btn-primary">Simpan</button>
-                 <button type="reset" class="btn btn-danger">Cancel</button>
-             </form>
-         </div>
-     </div>
- </div>
-</body>
+<!doctype html>
+<html lang="en"> 
+  <head> 
+    <meta charset="utf-8"> 
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Biji mas ade ganjil</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+  </head>
+  <body>
+  </body>
 </html>
+
+  <body>
+    <!-- navbar -->
+    <nav class="navbar sticky-top navbar-expand-lg bg-body-tertiary">
+  
+  <div class="container-fluid">
+    
+    <img src="img/logo.jpg" width="50px" alt="logo">
+
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNavAltMarkup" aria-controls="navbarNavAltMarkup" aria-expanded="false" aria-label="Toggle navigation">
+      
+      <span class="navbar-toggler-icon"></span>
+     
+    </button>
+
+    <div class="collapse navbar-collapse" id="navbarNavAltMarkup">
+      
+      <div class="navbar-nav">
+        <a class="nav-link active" aria-current="page" href="#">Home</a>
+        
+        <a class="nav-link" href="#">Features</a>
+
+        <a class="nav-link" href="#">Pricing</a>
+        <!-- Link ketiga untuk halaman pricing atau harga -->
+      </div>
+    </div>
+  </div>
+</nav>
+
+    <!-- end navbar -->
+
+    <!-- content -->
+    
+        <div class="container mt-5">
+            <div class="row justify-content-center">
+                <div class="col-8">
+                  <div class="card">
+                    <div class="card-body">
+                      <form method="post">
+
+                        <h2 class="text-center fw-bold">TRANSAKSI</h2>
+
+                        <!-- No transaksi -->
+                        <div class="mb-3">
+                        <label class="form-label">Nomer transaksi</label>
+                        <input type="number" class="form-control" name="no_transaksi" value="<?= $no_transaksi?>" required>
+                        </div>
+
+                        <!-- tanggal transaksi -->
+                        <div class="mb-3">
+                        <label class="form-label">Tanggal Transaksi</label>
+                        <input type="date" class="form-control" name="tanggal" value="<?= $tanggal?>" required>
+                        </div>
+
+                        <!-- nama customer -->
+                        <div class="mb-3">
+                        <label class="form-label">Nama customer</label>
+                        <input class="form-control" name="nama_customer" type="text" value="<?= $nama_customer?>" required>
+                        </div>
+
+
+                        <!--Pilih produk  -->
+
+                        <div class="mb-3">
+                        <label class="form-label">Pilih produk</label>
+                        <input class="form-control" name="paket" type="text" value="<?= $datapaket[$id][0]?>" readonly  required>
+                        </div>
+
+                        <!-- Harga produk -->
+
+                        <div class="mb-3">
+                        <label class="form-label">Harga produk</label>
+                        <input class="form-control" name="harga" type="text" value="<?= $datapaket[$id][2]?>" readonly  required>
+                        </div>
+
+                        <!-- jumlah produk -->
+                         <div class="mb-3">
+                        <label class="form-label">Jumlah produk</label>
+                        <input type="number" class="form-control" name="jumlah_produk"  required >
+                         </div>
+
+                        <!-- No transaksi -->
+
+                        <div class="mb-3">
+                        <label class="form-label">Total harga</label>
+                        <input type="text" class="form-control" name="total_harga" value="<?=$total_harga?>" readonly  required>
+                        </div>
+
+                        <button type="submit" class="btn btn-primary mb-3" name="hitung"  required >Hitung total</button>
+
+                        <!-- pembayaran -->
+                         <div class="mb-3">
+                          <label for="form-label">Pembayaran</label>
+                          <input type="number" class="form-control" name="pembayaran" value="<?=$pembayaran?>" required>
+                         </div>
+
+                        <!-- hitung kembalian -->
+                        <div class="mb-3">
+                          <button type="submit" class="btn btn-primary mb-3" name="hitung_kembalian" readonly  required>Hitung Kembalian</button>
+                          
+                        </div>
+                        <!-- kembalian -->
+                        <div class="mb-3">
+                        <label class="form-label"> kembalian</label>
+                        <input type="number" class="form-control" name="kembalian" value="<?=$kembalian?>" readonly  required>
+                        </div>
+
+                        <!-- simpan -->
+                        <div class="mb-3">
+                        <button type="submit" class="btn btn-primary mb-3" name="simpan">Simpan</button>
+
+                         </div>
+                      </form>
+                    </div>
+                  </div>
+                </div>
+            </div>
+        </div>
+    <!-- end content -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmXc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+  </body>
+</html>
+
+
+
+?>
